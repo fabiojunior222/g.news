@@ -84,7 +84,39 @@
                                     const total = pollVotes.reduce((a, b) => a + b, 0);
                                     const val = context.raw || 0;
                                     const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                                    return ` Votos: ${val} (${pct}\%)`; } } } }, scales: { x: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#94a3b8', font: { family: 'Orbitron', size: 11 } } }, y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: { family: 'Rajdhani', size: 13 }, precision: 0 } } } } });  updateStatsList(); }  function updateStatsList() { const total = pollVotes.reduce((a, b) => a + b, 0); const statsContainer = document.getElementById('statsList'); document.getElementById('totalVotesCount').innerText = `Total: ${total} votos`;
+                                    return ` Votos: ${val} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Orbitron', size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Rajdhani', size: 13 },
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateStatsList();
+        }
+
+        function updateStatsList() {
+            const total = pollVotes.reduce((a, b) => a + b, 0);
+            const statsContainer = document.getElementById('statsList');
+            document.getElementById('totalVotesCount').innerText = `Total: ${total} votos`;
 
             statsContainer.innerHTML = '';
 
@@ -99,4 +131,84 @@
                                 <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${game.color}"></span>
                                 ${game.name}
                             </span>
-                            <span class="font-mono text-slate-400">${count}
+                            <span class="font-mono text-slate-400">${count} voto(s) <span class="text-white">(${pct}%)</span></span>
+                        </div>
+                        <div class="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${game.color}"></div>
+                        </div>
+                    </div>
+                `;
+                statsContainer.innerHTML += itemHTML;
+            });
+        }
+
+        function castVote(gameIndex) {
+            const hasVoted = localStorage.getItem('gamer_poll_has_voted');
+
+            if (hasVoted) {
+                showAlert('Você já registrou seu voto nesta enquete!', 'warning');
+                disableVoteButtons();
+                return;
+            }
+
+            pollVotes[gameIndex]++;
+            saveLocalVotes();
+            localStorage.setItem('gamer_poll_has_voted', 'true');
+
+            chartInstance.data.datasets[0].data = pollVotes;
+            chartInstance.update();
+            updateStatsList();
+
+            showAlert(`Voto computado com sucesso no jogo: ${gamesData[gameIndex].name}!`, 'success');
+            checkVotingStatus();
+        }
+
+        function checkVotingStatus() {
+            const hasVoted = localStorage.getItem('gamer_poll_has_voted');
+            const badge = document.getElementById('votedStatusBadge');
+
+            if (hasVoted) {
+                badge.innerText = "Status: Voto Registrado";
+                badge.className = "text-xs px-3 py-1 rounded-md bg-neoncyan/10 text-neoncyan font-semibold border border-neoncyan/40";
+                disableVoteButtons();
+            } else {
+                badge.innerText = "Status: Não Votado";
+                badge.className = "text-xs px-3 py-1 rounded-md bg-slate-900 text-slate-400 font-semibold border border-slate-800";
+            }
+        }
+
+        function disableVoteButtons() {
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`btn-vote-${i}`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = `<i class="fa-solid fa-lock mr-1.5"></i> Votado`;
+                }
+            }
+        }
+
+        function showAlert(msg, type) {
+            const alertBox = document.getElementById('alertBox');
+            const alertContent = document.getElementById('alertContent');
+            const alertIcon = document.getElementById('alertIcon');
+            const alertMessage = document.getElementById('alertMessage');
+
+            alertMessage.innerText = msg;
+            alertBox.classList.remove('hidden');
+
+            if (type === 'warning') {
+                alertContent.className = "p-4 rounded-xl flex items-center justify-between border border-amber-500/50 bg-amber-950/80 text-amber-300 backdrop-blur-md shadow-lg";
+                alertIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            } else if (type === 'success') {
+                alertContent.className = "p-4 rounded-xl flex items-center justify-between border border-emerald-500/50 bg-emerald-950/80 text-emerald-300 backdrop-blur-md shadow-lg";
+                alertIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else {
+                alertContent.className = "p-4 rounded-xl flex items-center justify-between border border-cyan-500/50 bg-cyan-950/80 text-cyan-300 backdrop-blur-md shadow-lg";
+                alertIcon.className = "fa-solid fa-circle-info text-cyan-400";
+            }
+        }
+
+        function dismissAlert() {
+            document.getElementById('alertBox').classList.add('hidden');
+        }
+    </script>
